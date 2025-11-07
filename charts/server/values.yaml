@@ -1,0 +1,51 @@
+# Default values for rclone-server
+name: rclone-server
+replicaCount: 1
+
+image:
+  repository: naturemyloves/file-browser-rclone-server
+  pullPolicy: Always
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Environment variables for the server
+env:
+  SERVER_PORT: "8080"
+  # MinIO Configuration - These should be configured to match your MinIO installation
+  MINIO_ENDPOINT: "minio.default.svc.cluster.local:9000"
+  MINIO_ACCESS_KEY: "minio"
+  MINIO_SECRET_KEY: "input-password"
+  MINIO_ROOT_USER: "minio"
+  MINIO_ROOT_PASSWORD: "input-password"
+  MINIO_USE_SSL: "false"
+  MINIO_BUCKET: "data"
+  STORAGE_BUCKET: "data"
+# Rclone Storage Configuration (Cloud-agnostic)
+storage:
+  # Storage type: s3, google cloud storage, azureblob, etc.
+  type: "s3"
+  # Provider: Minio, AWS, GCS, Wasabi, etc.
+  provider: "Minio"
+  # Endpoint (for S3-compatible storage like MinIO)
+  endpoint: "http://minio.default.svc.cluster.local:9000"
+  # Bucket name to mount
+  bucket: "data"
+  # Access credentials
+  accessKey: "minio"
+  secretKey: "input-password"
+  # SSL/TLS
+  useSSL: false
+  # Region (for AWS S3)
+  region: ""

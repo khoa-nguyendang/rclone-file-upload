@@ -1,0 +1,51 @@
+# Default values for rclone-ui
+name: rclone-ui
+replicaCount: 1
+
+image:
+  repository: naturemyloves/file-browser-rclone-ui
+  pullPolicy: Always
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Environment variables for the UI
+env:
+  # API Configuration
+  NEXT_PUBLIC_API_URL: "http://input-domain.com"
+  NEXT_PUBLIC_API_TIMEOUT: "30000"
+
+  # App Configuration
+  NEXT_PUBLIC_APP_NAME: "RClone File Browser"
+  NEXT_PUBLIC_MAX_UPLOAD_SIZE: "104857600000"  # 100GB in bytes
+  NEXT_PUBLIC_DEFAULT_VIEW: "tree"
+  NEXT_PUBLIC_ENABLE_DELETE: "true"
+  NEXT_PUBLIC_ENABLE_UPLOAD: "true"
+
+  # MinIO Configuration (for display purposes)
+  NEXT_PUBLIC_MINIO_CONSOLE_URL: "http://minio.default.svc.cluster.local:9001"
+
+  # Proxy/Base path configuration
+  # Set these when deploying behind a proxy with a base path
+  NEXT_PUBLIC_BASE_PATH: "/rclone-ui"
+  NEXT_PUBLIC_ASSET_PREFIX: "/rclone-ui"
+
+# ConfigMap for runtime configuration (optional)
+config:
+  enabled: false
+  data: |
+    window.ENV = {
+      API_URL: '${NEXT_PUBLIC_API_URL}',
+      APP_NAME: '${NEXT_PUBLIC_APP_NAME}'
+    };

@@ -1,0 +1,12 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name | default "rclone-ui" }}-config
+  labels:
+    app: {{ .Values.name | default "rclone-ui" }}
+    component: ui
+data:
+  runtime-config.js: |
+{{ .Values.config.data | indent 4 }}
+{{- end }}

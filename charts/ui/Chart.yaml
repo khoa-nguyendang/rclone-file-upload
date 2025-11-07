@@ -1,0 +1,19 @@
+apiVersion: v2
+name: rclone-ui
+description: A Helm chart for RClone File Browser UI (Next.js React application)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - rclone
+  - ui
+  - frontend
+  - react
+  - nextjs
+  - file-browser
+maintainers:
+  - name: khoa-nguyendang
+    email: your-email@example.com
+home: https://github.com/khoa-nguyendang/rclone-file-upload
+sources:
+  - https://github.com/khoa-nguyendang/rclone-file-upload

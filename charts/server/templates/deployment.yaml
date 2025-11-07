@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name | default "rclone-server" }}
+  labels:
+    app: {{ .Values.name | default "rclone-server" }}
+    component: server
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name | default "rclone-server" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name | default "rclone-server" }}
+        component: server
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.env.SERVER_PORT | quote }}
+            - name: MINIO_ENDPOINT
+              value: {{ .Values.env.MINIO_ENDPOINT | quote }}
+            - name: MINIO_ACCESS_KEY
+              value: {{ .Values.env.MINIO_ACCESS_KEY | quote }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .Values.env.MINIO_SECRET_KEY | quote }}
+            - name: MINIO_USE_SSL
+              value: {{ .Values.env.MINIO_USE_SSL | quote }}
+            - name: MINIO_BUCKET
+              value: {{ .Values.env.MINIO_BUCKET | quote }}
+            - name: STORAGE_BUCKET
+              value: {{ .Values.env.STORAGE_BUCKET | quote }}
+            # Rclone Storage Configuration
+            - name: STORAGE_TYPE
+              value: {{ .Values.storage.type | quote }}
+            - name: STORAGE_PROVIDER
+              value: {{ .Values.storage.provider | quote }}
+            - name: STORAGE_ENDPOINT
+              value: {{ .Values.storage.endpoint | quote }}
+            - name: STORAGE_BUCKET
+              value: {{ .Values.storage.bucket | quote }}
+            - name: STORAGE_ACCESS_KEY
+              value: {{ .Values.storage.accessKey | quote }}
+            - name: STORAGE_SECRET_KEY
+              value: {{ .Values.storage.secretKey | quote }}
+            - name: STORAGE_USE_SSL
+              value: {{ .Values.storage.useSSL | quote }}
+            {{- if .Values.storage.region }}
+            - name: STORAGE_REGION
+              value: {{ .Values.storage.region | quote }}
+            {{- end }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | default "256Mi" }}
+              cpu: {{ .Values.resources.requests.cpu | default "100m" }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | default "512Mi" }}
+              cpu: {{ .Values.resources.limits.cpu | default "500m" }}

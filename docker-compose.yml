@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # Redis for RClone metadata
+  redis:
+    image: redis:7-alpine
+    container_name: rclone-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - rclone-net
+
+  # MinIO for object storage
+  minio:
+    image: minio/minio:latest
+    container_name: rclone-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_DEFAULT_BUCKETS: rclone
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - rclone-net
+
+  # MinIO Client for bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: rclone-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+      mc mb -p myminio/rclone || true;
+      mc admin user add myminio rclone rclone123 || true;
+      mc admin policy attach myminio readwrite --user rclone || true;
+      echo 'MinIO initialized successfully';
+      exit 0;
+      "
+    networks:
+      - rclone-net
+
+  # Go application for file upload/download with RClone POSIX mount
+  go-app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: rclone-go-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      - SERVER_PORT=8080
+      # MinIO Configuration (for direct S3 API access)
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=rclone
+      - MINIO_SECRET_KEY=rclone123
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET=rclone
+      # RClone Storage Configuration (for POSIX mount)
+      - STORAGE_TYPE=s3
+      - STORAGE_PROVIDER=Minio
+      - STORAGE_ENDPOINT=minio:9000
+      - STORAGE_BUCKET=rclone
+      - STORAGE_ACCESS_KEY=rclone
+      - STORAGE_SECRET_KEY=rclone123
+      - STORAGE_USE_SSL=false
+    privileged: true  # Required for FUSE mount
+    cap_add:
+      - SYS_ADMIN  # Required for mount operations
+    devices:
+      - /dev/fuse  # Required for FUSE filesystem
+    networks:
+      - rclone-net
+
+  # React UI application
+  ui-app:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: rclone-ui
+    ports:
+      - "3000:3000"
+    depends_on:
+      - go-app
+    environment:
+      - NODE_ENV=production
+      # API Configuration
+      - NEXT_PUBLIC_API_URL=http://go-app:8080
+      - NEXT_PUBLIC_API_TIMEOUT=30000
+      # MinIO Configuration
+      - NEXT_PUBLIC_MINIO_URL=http://minio:9000
+      - NEXT_PUBLIC_MINIO_CONSOLE_URL=http://localhost:9001
+      # App Configuration
+      - NEXT_PUBLIC_APP_NAME=RClone File Browser
+      - NEXT_PUBLIC_MAX_UPLOAD_SIZE=104857600
+      - NEXT_PUBLIC_ENABLE_DELETE=true
+      - NEXT_PUBLIC_ENABLE_UPLOAD=true
+      # UI Configuration
+      - NEXT_PUBLIC_DEFAULT_VIEW=tree
+      - NEXT_PUBLIC_SHOW_HIDDEN_FILES=false
+      - NEXT_PUBLIC_FILE_PREVIEW_ENABLED=true
+    networks:
+      - rclone-net
+
+networks:
+  rclone-net:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local

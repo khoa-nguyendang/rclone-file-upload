@@ -137,3 +137,74 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Go binaries and build files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go vendor directory
+vendor/
+
+# Go sum file (auto-generated)
+go.sum
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+
+# RClone mount directories
+rclone-volume-redis/
+rclone-volume-postgres/
+
+# Cache directories
+/var/jfsCache/
+/var/jfsCache2/
+
+# Docker volume directories
+redis_data/
+postgres_data/
+minio_data/
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test files
+test-file.txt
+bench-*.dat
+
+# Static files directory (if added later)
+static/
+*.env
+rclone-volume-redis/*
+rclone-volume-postgres/*
+test-upload-folder/*

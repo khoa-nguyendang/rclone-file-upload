@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name | default "rclone-ui" }}
+  labels:
+    app: {{ .Values.name | default "rclone-ui" }}
+    component: ui
+spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.service.port | default 3000 }}
+      targetPort: {{ .Values.service.targetPort | default 3000 }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.name | default "rclone-ui" }}

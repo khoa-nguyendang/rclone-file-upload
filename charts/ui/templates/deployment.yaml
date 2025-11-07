@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name | default "rclone-ui" }}
+  labels:
+    app: {{ .Values.name | default "rclone-ui" }}
+    component: ui
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name | default "rclone-ui" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name | default "rclone-ui" }}
+        component: ui
+    spec:
+      containers:
+        - name: ui
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: {{ .Values.env.NEXT_PUBLIC_API_URL | quote }}
+            - name: NEXT_PUBLIC_API_TIMEOUT
+              value: {{ .Values.env.NEXT_PUBLIC_API_TIMEOUT | quote }}
+            - name: NEXT_PUBLIC_APP_NAME
+              value: {{ .Values.env.NEXT_PUBLIC_APP_NAME | quote }}
+            - name: NEXT_PUBLIC_MAX_UPLOAD_SIZE
+              value: {{ .Values.env.NEXT_PUBLIC_MAX_UPLOAD_SIZE | quote }}
+            - name: NEXT_PUBLIC_DEFAULT_VIEW
+              value: {{ .Values.env.NEXT_PUBLIC_DEFAULT_VIEW | quote }}
+            - name: NEXT_PUBLIC_ENABLE_DELETE
+              value: {{ .Values.env.NEXT_PUBLIC_ENABLE_DELETE | quote }}
+            - name: NEXT_PUBLIC_ENABLE_UPLOAD
+              value: {{ .Values.env.NEXT_PUBLIC_ENABLE_UPLOAD | quote }}
+            - name: NEXT_PUBLIC_MINIO_CONSOLE_URL
+              value: {{ .Values.env.NEXT_PUBLIC_MINIO_CONSOLE_URL | quote }}
+            - name: NEXT_PUBLIC_BASE_PATH
+              value: {{ .Values.env.NEXT_PUBLIC_BASE_PATH | quote }}
+            - name: NEXT_PUBLIC_ASSET_PREFIX
+              value: {{ .Values.env.NEXT_PUBLIC_ASSET_PREFIX | quote }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | default "256Mi" }}
+              cpu: {{ .Values.resources.requests.cpu | default "100m" }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | default "512Mi" }}
+              cpu: {{ .Values.resources.limits.cpu | default "500m" }}
