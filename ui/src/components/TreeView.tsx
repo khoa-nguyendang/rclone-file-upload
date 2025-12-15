@@ -10,7 +10,7 @@ import {
   ArrowDownTrayIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { config, buildApiUrl } from '@/lib/config';
+import { useRuntimeConfig, useApiUrl } from '@/lib/runtime-config';
 
 interface TreeNode {
   name: string;
@@ -29,6 +29,8 @@ interface TreeViewProps {
 }
 
 export default function TreeView({ onFileSelect, onRefresh }: TreeViewProps) {
+  const config = useRuntimeConfig();
+  const buildApiUrl = useApiUrl();
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function TreeView({ onFileSelect, onRefresh }: TreeViewProps) {
     } finally {
       setLoading(prev => ({ ...prev, [path]: false }));
     }
-  }, []);
+  }, [buildApiUrl]);
 
   // Load root directory on mount
   useEffect(() => {

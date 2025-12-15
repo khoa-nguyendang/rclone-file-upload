@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Set build-time environment variables BEFORE copying source
-# These MUST be ENV, not just ARG, for Next.js to use them
+# These are DEFAULT values - they will be overridden by RUNTIME_* variables at container start
 ENV NEXT_PUBLIC_API_URL=http://localhost:8080/api
 ENV NEXT_PUBLIC_API_TIMEOUT=30000
 ENV NEXT_PUBLIC_MINIO_URL=http://minio:9000
@@ -24,8 +24,10 @@ ENV NEXT_PUBLIC_SHOW_HIDDEN_FILES=false
 ENV NEXT_PUBLIC_FILE_PREVIEW_ENABLED=true
 
 # These are for next.config.ts basePath and assetPrefix
-ENV BASE_PATH="/rclone-ui"
-ENV ASSET_PREFIX="/rclone-ui"
+# Leave empty for direct access (http://localhost:3000)
+# Set to "/rclone-ui" if deploying behind a reverse proxy at /rclone-ui path
+ENV BASE_PATH=""
+ENV ASSET_PREFIX=""
 
 # Copy source code AFTER setting ENV variables
 COPY . .
@@ -43,8 +45,10 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Runtime ENV for server-side rendering (SSR) and API routes
-# These can be overridden at runtime for server-side code
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 ENV NEXT_PUBLIC_API_URL=http://localhost:8080/api
 ENV NEXT_PUBLIC_API_TIMEOUT=30000
 ENV NEXT_PUBLIC_MAX_UPLOAD_SIZE=104857600000
@@ -53,4 +57,4 @@ ENV NEXT_PUBLIC_MAX_UPLOAD_SIZE=104857600000
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "server.js"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

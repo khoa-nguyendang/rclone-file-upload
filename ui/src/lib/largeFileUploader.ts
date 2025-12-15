@@ -1,5 +1,7 @@
 // Large file upload utilities with chunked upload support
-import { buildApiUrl } from './config';
+
+// Type for API URL builder function
+export type ApiUrlBuilder = (path: string) => string;
 
 interface ChunkUploadOptions {
   file: File;
@@ -17,6 +19,11 @@ export class LargeFileUploader {
   private static readonly LARGE_FILE_THRESHOLD = 100 * 1024 * 1024; // 100MB
 
   private abortController?: AbortController;
+  private buildApiUrl: ApiUrlBuilder;
+
+  constructor(buildApiUrl: ApiUrlBuilder) {
+    this.buildApiUrl = buildApiUrl;
+  }
 
   // Check if file should use chunked upload
   static shouldUseChunkedUpload(fileSize: number): boolean {
@@ -42,7 +49,7 @@ export class LargeFileUploader {
       const totalChunks = Math.ceil(file.size / chunkSize);
 
       // Step 1: Initiate multipart upload
-      const initResponse = await fetch(buildApiUrl('/multipart/initiate'), {
+      const initResponse = await fetch(this.buildApiUrl('/multipart/initiate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +114,7 @@ export class LargeFileUploader {
       formData.append('part_number', partNumber.toString());
       formData.append('total_parts', totalParts.toString());
 
-      const response = await fetch(buildApiUrl('/multipart/upload-chunk'), {
+      const response = await fetch(this.buildApiUrl('/multipart/upload-chunk'), {
         method: 'POST',
         body: formData,
         signal: this.abortController?.signal
@@ -141,7 +148,7 @@ export class LargeFileUploader {
   ): Promise<void> {
     try {
       // Get presigned URL from server
-      const response = await fetch(buildApiUrl('/presigned-url'), {
+      const response = await fetch(this.buildApiUrl('/presigned-url'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

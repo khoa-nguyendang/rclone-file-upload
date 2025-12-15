@@ -110,6 +110,9 @@ func uploadHandlerRClone(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Successfully uploaded file to RClone: %s (%d bytes)", relativePath, written)
 
+	// Invalidate stats cache after successful upload
+	InvalidateStatsCache()
+
 	// Return success response
 	response := UploadResponse{
 		Success:    true,

@@ -10,19 +10,25 @@ echo "=================================="
 
 # Create rclone configuration from environment variables
 mkdir -p /root/.config/rclone
+
+# Determine the endpoint URL with proper protocol
+ENDPOINT_HOST="${STORAGE_ENDPOINT:-minio:9000}"
+if [ "${STORAGE_USE_SSL}" = "true" ]; then
+    ENDPOINT_URL="https://${ENDPOINT_HOST}"
+else
+    ENDPOINT_URL="http://${ENDPOINT_HOST}"
+fi
+
 cat > /root/.config/rclone/rclone.conf <<EOF
 [storage]
 type = ${STORAGE_TYPE:-s3}
 provider = ${STORAGE_PROVIDER:-Minio}
-endpoint = ${STORAGE_ENDPOINT:-minio:9000}
+endpoint = ${ENDPOINT_URL}
 access_key_id = ${STORAGE_ACCESS_KEY:-rclone}
 secret_access_key = ${STORAGE_SECRET_KEY:-rclone123}
+env_auth = false
+force_path_style = true
 EOF
-
-# For S3-compatible storage, disable SSL if needed
-if [ "${STORAGE_USE_SSL}" != "true" ]; then
-    echo "use_ssl = false" >> /root/.config/rclone/rclone.conf
-fi
 
 # For AWS S3, add region
 if [ -n "${STORAGE_REGION}" ]; then
@@ -40,23 +46,23 @@ if [ -f /etc/fuse.conf ]; then
     # Ensure user_allow_other is enabled
     if ! grep -q "user_allow_other" /etc/fuse.conf; then
         echo "user_allow_other" >> /etc/fuse.conf
-        echo "✓ Added user_allow_other to /etc/fuse.conf"
+        echo "Added user_allow_other to /etc/fuse.conf"
     else
-        echo "✓ user_allow_other already configured"
+        echo "user_allow_other already configured"
     fi
 else
     # Create fuse.conf if it doesn't exist
     echo "user_allow_other" > /etc/fuse.conf
-    echo "✓ Created /etc/fuse.conf with user_allow_other"
+    echo "Created /etc/fuse.conf with user_allow_other"
 fi
 echo ""
 
 # Test connectivity to storage endpoint first
 echo "Testing connectivity to storage endpoint..."
 if timeout 10 rclone lsd storage: 2>/dev/null; then
-    echo "✓ Successfully connected to storage endpoint"
+    echo "Successfully connected to storage endpoint"
 else
-    echo "⚠ WARNING: Cannot connect to storage endpoint yet. Will retry during mount..."
+    echo "WARNING: Cannot connect to storage endpoint yet. Will retry during mount..."
 fi
 echo ""
 
@@ -82,11 +88,11 @@ echo "Waiting for mount to be ready..."
 MOUNT_SUCCESS=false
 for i in {1..30}; do
     if mountpoint -q /storage 2>/dev/null; then
-        echo "✓ Storage mounted successfully via Rclone"
+        echo "Storage mounted successfully via Rclone"
         if ls -la /storage 2>/dev/null; then
-            echo "✓ Mount is accessible and working"
+            echo "Mount is accessible and working"
         else
-            echo "⚠ Mount is ready but bucket may be empty or inaccessible"
+            echo "Mount is ready but bucket may be empty or inaccessible"
         fi
         MOUNT_SUCCESS=true
         break

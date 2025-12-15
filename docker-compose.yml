@@ -103,21 +103,23 @@ services:
       - go-app
     environment:
       - NODE_ENV=production
+      # Runtime Configuration (RUNTIME_* variables can be changed at container start without rebuilding)
+      # These override the build-time defaults and are fetched via /api/config endpoint
       # API Configuration
-      - NEXT_PUBLIC_API_URL=http://go-app:8080
-      - NEXT_PUBLIC_API_TIMEOUT=30000
+      - RUNTIME_API_URL=http://localhost:8080/api
+      - RUNTIME_API_TIMEOUT=30000
       # MinIO Configuration
-      - NEXT_PUBLIC_MINIO_URL=http://minio:9000
-      - NEXT_PUBLIC_MINIO_CONSOLE_URL=http://localhost:9001
+      - RUNTIME_MINIO_URL=http://minio:9000
+      - RUNTIME_MINIO_CONSOLE_URL=http://localhost:9001
       # App Configuration
-      - NEXT_PUBLIC_APP_NAME=RClone File Browser
-      - NEXT_PUBLIC_MAX_UPLOAD_SIZE=104857600
-      - NEXT_PUBLIC_ENABLE_DELETE=true
-      - NEXT_PUBLIC_ENABLE_UPLOAD=true
+      - RUNTIME_APP_NAME=RClone File Browser
+      - RUNTIME_MAX_UPLOAD_SIZE=104857600000
+      - RUNTIME_ENABLE_DELETE=true
+      - RUNTIME_ENABLE_UPLOAD=true
       # UI Configuration
-      - NEXT_PUBLIC_DEFAULT_VIEW=tree
-      - NEXT_PUBLIC_SHOW_HIDDEN_FILES=false
-      - NEXT_PUBLIC_FILE_PREVIEW_ENABLED=true
+      - RUNTIME_DEFAULT_VIEW=tree
+      - RUNTIME_SHOW_HIDDEN_FILES=false
+      - RUNTIME_FILE_PREVIEW_ENABLED=true
     networks:
       - rclone-net
 

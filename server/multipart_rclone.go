@@ -207,6 +207,10 @@ func finalizeRCloneUpload(session *ChunkUploadSessionRClone) error {
 	}
 
 	log.Printf("Finalized RClone upload: %s", session.FilePath)
+
+	// Invalidate stats cache after successful multipart upload
+	InvalidateStatsCache()
+
 	return nil
 }
 

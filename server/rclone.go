@@ -158,6 +158,9 @@ func deleteHandlerRClone(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Successfully deleted from RClone: %s", filePath)
 
+	// Invalidate stats cache after successful delete
+	InvalidateStatsCache()
+
 	response := map[string]interface{}{
 		"success": true,
 		"message": "File deleted successfully",
@@ -185,8 +188,9 @@ func statsHandlerRClone(w http.ResponseWriter, r *http.Request) {
 	isCalculating := statsCalculating
 	statsCacheMu.RUnlock()
 
-	// If cache exists and is fresh, return it
-	if !forceRefresh && cachedStats != nil && time.Since(cacheTime) < statsCacheTTL {
+	// If cache exists and is fresh (not invalidated), return it
+	// Note: cacheTime.IsZero() means cache was invalidated and needs refresh
+	if !forceRefresh && cachedStats != nil && !cacheTime.IsZero() && time.Since(cacheTime) < statsCacheTTL {
 		log.Printf("Serving cached stats (age: %v)", time.Since(cacheTime))
 
 		// Update cache age in the response
@@ -199,7 +203,8 @@ func statsHandlerRClone(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If calculation already in progress in background, return stale cache if available
-	if isCalculating && cachedStats != nil {
+	// But only if cache wasn't invalidated (not zero time)
+	if isCalculating && cachedStats != nil && !cacheTime.IsZero() {
 		log.Printf("Calculation in progress, returning stale cache")
 		cachedStats["calculatingInBackground"] = true
 		cachedStats["cacheAge"] = time.Since(cacheTime).String()
@@ -497,4 +502,14 @@ func startBackgroundStatsRefresh() {
 	}()
 
 	log.Printf("Background stats refresh started (every 5 minutes)")
+}
+
+// InvalidateStatsCache invalidates the stats cache - call after file uploads/deletes
+func InvalidateStatsCache() {
+	statsCacheMu.Lock()
+	defer statsCacheMu.Unlock()
+
+	// Reset cache time to force refresh on next request
+	statsCacheTime = time.Time{}
+	log.Printf("Stats cache invalidated")
 }

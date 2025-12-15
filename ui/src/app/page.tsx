@@ -2,11 +2,11 @@
 
 import FileBrowser from '@/components/FileBrowser';
 import FileUpload from '@/components/FileUpload';
-import StorageStats from '@/components/StorageStats';
+import StorageStats, { StorageStatsRef } from '@/components/StorageStats';
 import TreeView from '@/components/TreeView';
-import { buildApiUrl, config } from '@/lib/config';
+import { useRuntimeConfig, useApiUrl } from '@/lib/runtime-config';
 import { ListBulletIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface FileItem {
   name: string;
@@ -19,11 +19,14 @@ interface FileItem {
 type ViewMode = 'tree' | 'flat';
 
 export default function Home() {
+  const config = useRuntimeConfig();
+  const buildApiUrl = useApiUrl();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState('/');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(config.ui.defaultView);
+  const statsRef = useRef<StorageStatsRef>(null);
 
   useEffect(() => {
     if (viewMode === 'flat') {
@@ -59,6 +62,8 @@ export default function Home() {
       loadFiles(currentPath);
     }
     // TreeView has its own refresh mechanism
+    // Also refresh storage stats
+    statsRef.current?.refresh(true);
   };
 
   const handleViewModeChange = (mode: ViewMode) => {
@@ -113,7 +118,7 @@ export default function Home() {
         </header>
 
         {/* Storage Statistics */}
-        <StorageStats />
+        <StorageStats ref={statsRef} />
 
         {/* Upload Section - Always visible if enabled */}
         {config.app.enableUpload && (

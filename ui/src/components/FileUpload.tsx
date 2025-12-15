@@ -1,6 +1,6 @@
 'use client';
 
-import { buildApiUrl } from '@/lib/config';
+import { useApiUrl } from '@/lib/runtime-config';
 import { LargeFileUploader, getUploadStrategy } from '@/lib/largeFileUploader';
 import {
   CloudArrowUpIcon,
@@ -23,6 +23,7 @@ interface UploadFile {
 }
 
 export default function FileUpload({ currentPath, onUploadComplete }: FileUploadProps) {
+  const buildApiUrl = useApiUrl();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadQueue, setUploadQueue] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -140,7 +141,7 @@ export default function FileUpload({ currentPath, onUploadComplete }: FileUpload
 
     // Use chunked upload for files >= 100MB
     if (strategy === 'chunked' || strategy === 'presigned') {
-      const uploader = new LargeFileUploader();
+      const uploader = new LargeFileUploader(buildApiUrl);
 
       try {
         if (strategy === 'presigned' && file.size > 5 * 1024 * 1024 * 1024) {

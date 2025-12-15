@@ -1,6 +1,6 @@
 'use client';
 
-import { buildApiUrl, config } from '@/lib/config';
+import { useRuntimeConfig, useApiUrl } from '@/lib/runtime-config';
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -33,6 +33,8 @@ export default function FileBrowser({
   onNavigate,
   onRefresh
 }: FileBrowserProps) {
+  const config = useRuntimeConfig();
+  const buildApiUrl = useApiUrl();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
 
   const formatFileSize = (bytes: number): string => {

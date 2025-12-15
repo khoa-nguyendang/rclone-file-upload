@@ -42,9 +42,9 @@ docker-compose up --build
 make up
 
 # Access the application
-# UI: http://localhost:3000
-# API: http://localhost:8080
-# MinIO Console: http://localhost:9001
+UI: http://localhost:3000
+API: http://localhost:8080
+MinIO Console: http://localhost:9001
 
 # Stop services
 docker-compose down

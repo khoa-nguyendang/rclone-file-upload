@@ -1,15 +1,15 @@
 'use client';
 
-import { buildApiUrl } from '@/lib/config';
+import { useApiUrl } from '@/lib/runtime-config';
 import {
   ArrowPathIcon,
   ChartBarIcon,
   FolderIcon,
   ServerIcon
 } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 
-interface StorageStats {
+interface StorageStatsData {
   storage: {
     totalObjects: number;
     totalSize: number;
@@ -31,15 +31,25 @@ interface StorageStats {
   calculatingInBackground?: boolean;
 }
 
-export default function StorageStats() {
-  const [stats, setStats] = useState<StorageStats | null>(null);
+// Expose refresh method via ref
+export interface StorageStatsRef {
+  refresh: (forceRefresh?: boolean) => void;
+}
+
+const StorageStats = forwardRef<StorageStatsRef>(function StorageStats(_, ref) {
+  const buildApiUrl = useApiUrl();
+  const [stats, setStats] = useState<StorageStatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = async (forceRefresh = false) => {
+  const fetchStats = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
+      // Add small delay to allow server cache to be invalidated and MinIO to sync
+      if (forceRefresh) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       // Add refresh parameter for force refresh, increase timeout to 5 minutes for large storage
       const url = forceRefresh ? buildApiUrl('/stats?refresh=true') : buildApiUrl('/stats');
       const controller = new AbortController();
@@ -69,12 +79,19 @@ export default function StorageStats() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [buildApiUrl]);
+
+  // Expose refresh method via ref for parent components
+  useImperativeHandle(ref, () => ({
+    refresh: (forceRefresh = true) => {
+      fetchStats(forceRefresh);
+    }
+  }), [fetchStats]);
 
   useEffect(() => {
     // Load stats once on mount, no auto-refresh
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   if (error) {
     return (
@@ -240,4 +257,6 @@ export default function StorageStats() {
       </div>
     </div>
   );
-}
+});
+
+export default StorageStats;
